@@ -1,0 +1,91 @@
+﻿import { useState } from 'react'
+import './Login.css'
+
+type LoginProps = {
+  onLogin: (identifier: string) => void
+}
+
+function Login({ onLogin }: LoginProps) {
+  const [identifier, setIdentifier] = useState('')
+  const [pin, setPin] = useState('')
+  const [showPin, setShowPin] = useState(false)
+  const [error, setError] = useState('')
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!identifier.trim()) {
+      setError('Veuillez saisir votre identifiant.')
+      return
+    }
+
+    if (!/^[0-9]{4,6}$/.test(pin)) {
+      setError('Le code PIN doit contenir 4 à 6 chiffres.')
+      return
+    }
+
+    setError('')
+    onLogin(identifier.trim())
+  }
+
+  return (
+    <main className="login-page">
+      <section className="login-panel">
+        <div className="login-logo">S</div>
+
+        <p className="login-brand">SAMA FBO</p>
+        <p className="login-signature">ÉTUDES · RIGUEUR · CROISSANCE</p>
+
+        <div className="login-heading">
+          <span className="eyebrow">VOTRE ESPACE PERSONNEL</span>
+          <h1>Bienvenue.</h1>
+          <p>Connectez-vous pour retrouver votre espace de travail.</p>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="identifier">Identifiant</label>
+          <input
+            id="identifier"
+            type="text"
+            placeholder="Votre identifiant"
+            value={identifier}
+            onChange={(event) => setIdentifier(event.target.value)}
+            autoComplete="username"
+          />
+
+          <label htmlFor="pin">Code PIN</label>
+          <div className="pin-field">
+            <input
+              id="pin"
+              type={showPin ? 'text' : 'password'}
+              placeholder="4 à 6 chiffres"
+              value={pin}
+              onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              inputMode="numeric"
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              className="pin-toggle"
+              onClick={() => setShowPin(!showPin)}
+            >
+              {showPin ? 'Masquer' : 'Afficher'}
+            </button>
+          </div>
+
+          {error && <p className="login-error">{error}</p>}
+
+          <button type="submit" className="login-submit">
+            Accéder à mon espace
+          </button>
+        </form>
+
+        <p className="login-footer">
+          SAMA FBO · Études · Rigueur · Croissance
+        </p>
+      </section>
+    </main>
+  )
+}
+
+export default Login

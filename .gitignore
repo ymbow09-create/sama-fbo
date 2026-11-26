@@ -1,0 +1,17 @@
+
+# Fichiers secrets
+.env
+**/.env
+*.local
+
+# Dépendances
+node_modules/
+**/node_modules/
+
+# Fichiers de compilation
+dist/
+**/dist/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
