@@ -8,6 +8,8 @@ type Message = {
   text: string
 }
 
+const API_URL = 'https://sama-fbo.onrender.com/api/chat'
+
 function SamaAI() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -37,11 +39,12 @@ function SamaAI() {
       ...current,
       { role: 'user', text: message },
     ])
+
     setInput('')
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:3001/api/chat', {
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +78,7 @@ function SamaAI() {
         ...current,
         {
           role: 'model',
-          text: `${errorMessage} Vérifie que le serveur est démarré.`,
+          text: `${errorMessage} Vérifie ta connexion Internet et réessaie.`,
         },
       ])
     } finally {
@@ -99,10 +102,17 @@ function SamaAI() {
               key={index}
             >
               <div className="sama-ai-avatar">
-                {message.role === 'model' ? <Bot size={20} /> : <User size={20} />}
+                {message.role === 'model' ? (
+                  <Bot size={20} />
+                ) : (
+                  <User size={20} />
+                )}
               </div>
+
               <div className="sama-ai-bubble">
-                <span>{message.role === 'model' ? 'SAMA IA' : 'Vous'}</span>
+                <span>
+                  {message.role === 'model' ? 'SAMA IA' : 'Vous'}
+                </span>
                 <p>{message.text}</p>
               </div>
             </div>
@@ -130,6 +140,7 @@ function SamaAI() {
             placeholder="Écris ton message à SAMA IA..."
             disabled={loading}
           />
+
           <button
             type="submit"
             disabled={!input.trim() || loading}
