@@ -7,7 +7,7 @@ const { GoogleGenAI } = require('@google/genai')
 dotenv.config()
 
 const app = express()
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 
 app.use(cors())
 app.use(express.json())
@@ -15,14 +15,17 @@ app.use(express.json())
 const apiKey = process.env.GEMINI_API_KEY
 
 if (!apiKey) {
-  console.error('Erreur : clé API Gemini manquante dans le fichier .env')
+  console.error('Erreur : clé API Gemini manquante.')
   process.exit(1)
 }
 
 const ai = new GoogleGenAI({ apiKey })
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'SAMA IA est prêt.' })
+  res.json({
+    status: 'ok',
+    message: 'SAMA IA est prêt.',
+  })
 })
 
 app.post('/api/chat', async (req, res) => {
@@ -30,16 +33,21 @@ app.post('/api/chat', async (req, res) => {
     const { message, history = [] } = req.body
 
     if (!message || typeof message !== 'string') {
-      return res.status(400).json({ error: 'Message invalide.' })
+      return res.status(400).json({
+        error: 'Message invalide.',
+      })
     }
 
     const contents = [
       ...history,
-      { role: 'user', parts: [{ text: message }] },
+      {
+        role: 'user',
+        parts: [{ text: message }],
+      },
     ]
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents,
       config: {
         systemInstruction:
@@ -50,15 +58,18 @@ app.post('/api/chat', async (req, res) => {
       },
     })
 
-    res.json({ reply: response.text || 'Je n’ai pas pu générer de réponse.' })
+    res.json({
+      reply: response.text || 'Je n’ai pas pu générer de réponse.',
+    })
   } catch (error) {
     console.error('Erreur Gemini :', error.message)
+
     res.status(500).json({
-      error: 'Impossible de contacter Gemini. Vérifie la clé API et réessaie.',
+      error: 'Impossible de générer une réponse avec Gemini. Réessaie.',
     })
   }
 })
 
-app.listen(PORT, () => {
-  console.log(`SAMA IA est prêt sur http://localhost:${PORT}`)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`SAMA IA est prêt sur le port ${PORT}`)
 })
