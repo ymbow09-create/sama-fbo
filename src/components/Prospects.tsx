@@ -11,6 +11,7 @@ import {
   Clock,
   Trash2,
 } from 'lucide-react'
+import { scheduleCloudSave } from '../lib/cloudSync'
 import './Prospects.css'
 
 type ContactStatus = 'Nouveau' | 'Intéressé' | 'Client' | 'À relancer'
@@ -48,6 +49,7 @@ function Prospects() {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts))
+    scheduleCloudSave(STORAGE_KEY, contacts)
   }, [contacts])
 
   const filteredContacts = useMemo(() => {

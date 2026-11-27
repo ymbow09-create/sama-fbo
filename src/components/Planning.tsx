@@ -9,6 +9,7 @@ import {
   Check,
   Clock,
 } from 'lucide-react'
+import { scheduleCloudSave } from '../lib/cloudSync'
 import './Planning.css'
 
 type TaskCategory = 'Études' | 'Forever' | 'Personnel'
@@ -65,6 +66,7 @@ function Planning() {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks))
+    scheduleCloudSave(STORAGE_KEY, tasks)
   }, [tasks])
 
   const calendarDays = useMemo(() => {

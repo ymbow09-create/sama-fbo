@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from './lib/firebase'
+import { syncUserData } from './lib/sync'
 import SamaLogo from './components/SamaLogo'
 import Login from './components/Login'
 import Navigation, { type PageName } from './components/Navigation'
@@ -24,7 +25,9 @@ type DashboardStats = {
 function getDashboardStats(): DashboardStats {
   const date = new Date()
   const offset = date.getTimezoneOffset()
-  const month = new Date(date.getTime() - offset * 60000).toISOString().slice(0, 7)
+  const month = new Date(date.getTime() - offset * 60000)
+    .toISOString()
+    .slice(0, 7)
 
   try {
     const sales = JSON.parse(localStorage.getItem('sama-fbo-sales') || '[]')
@@ -39,15 +42,18 @@ function getDashboardStats(): DashboardStats {
       : []
 
     const revenue = monthlySales.reduce(
-      (sum, sale) => sum + (Number(sale.total) || 0), 0,
+      (sum, sale) => sum + (Number(sale.total) || 0),
+      0,
     )
 
     const creditsCC = monthlySales.reduce(
-      (sum, sale) => sum + (Number(sale.ccTotal) || 0), 0,
+      (sum, sale) => sum + (Number(sale.ccTotal) || 0),
+      0,
     )
 
     const expensesTotal = monthlyExpenses.reduce(
-      (sum, expense) => sum + (Number(expense.amount) || 0), 0,
+      (sum, expense) => sum + (Number(expense.amount) || 0),
+      0,
     )
 
     return {
@@ -69,6 +75,9 @@ function App() {
   const [showSplash, setShowSplash] = useState(true)
   const [user, setUser] = useState('')
   const [authReady, setAuthReady] = useState(false)
+  const [syncReady, setSyncReady] = useState(false)
+  const [syncError, setSyncError] = useState('')
+  const [syncAttempt, setSyncAttempt] = useState(0)
   const [activePage, setActivePage] = useState<PageName>('Accueil')
   const [stats, setStats] = useState<DashboardStats>(getDashboardStats)
 
@@ -81,38 +90,71 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(
-          firebaseUser.email ||
-          firebaseUser.displayName ||
-          firebaseUser.uid
-        )
-      } else {
+    let active = true
+    let currentRun = 0
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const run = ++currentRun
+
+      setSyncReady(false)
+      setSyncError('')
+
+      if (!firebaseUser) {
         setUser('')
+        setSyncReady(false)
+        setAuthReady(true)
+        return
       }
 
+      setUser(
+        firebaseUser.email ||
+        firebaseUser.displayName ||
+        firebaseUser.uid,
+      )
+
       setAuthReady(true)
+
+      try {
+        await syncUserData(firebaseUser.uid)
+
+        if (!active || run !== currentRun) return
+
+        setStats(getDashboardStats())
+        setSyncReady(true)
+      } catch (error) {
+        console.error('Erreur de synchronisation :', error)
+
+        if (!active || run !== currentRun) return
+
+        setSyncError(
+          error instanceof Error
+            ? error.message
+            : 'Une erreur est survenue pendant la synchronisation.',
+        )
+        setSyncReady(false)
+      }
     })
 
-    return unsubscribe
-  }, [])
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [syncAttempt])
 
   async function handleLogout() {
     try {
       await signOut(auth)
+      setActivePage('Accueil')
     } catch (error) {
       console.error('Erreur lors de la déconnexion :', error)
     }
-
-    setUser('')
-    setActivePage('Accueil')
   }
 
   function navigateToPage(page: PageName) {
     if (page === 'Accueil') {
       setStats(getDashboardStats())
     }
+
     setActivePage(page)
   }
 
@@ -124,11 +166,46 @@ function App() {
     return <Login onLogin={setUser} />
   }
 
+  if (!syncReady) {
+    return (
+      <main className="dashboard">
+        <section className="module-page">
+          <span className="eyebrow">SAMA FBO</span>
+          <h1>
+            {syncError
+              ? 'Synchronisation interrompue'
+              : 'Préparation de votre espace'}
+          </h1>
+
+          {syncError ? (
+            <>
+              <p>
+                Impossible de synchroniser les données de votre compte.
+                Vos données locales n'ont pas été supprimées.
+              </p>
+              <p>{syncError}</p>
+              <button onClick={() => setSyncAttempt((value) => value + 1)}>
+                Réessayer la synchronisation
+              </button>
+              <button onClick={handleLogout}>
+                Déconnexion
+              </button>
+            </>
+          ) : (
+            <p>
+              Nous récupérons vos données personnelles. Veuillez patienter.
+            </p>
+          )}
+        </section>
+      </main>
+    )
+  }
+
   const pageDescriptions: Record<PageName, string> = {
-    'Accueil': 'Votre espace de gestion et de suivi.',
+    Accueil: 'Votre espace de gestion et de suivi.',
     'Comptabilité & CC': 'Suivez vos ventes, dépenses, bénéfices et crédits CC.',
-    'Stock': 'Contrôlez vos produits, vos entrées et vos sorties.',
-    'Planning': 'Organisez vos cours, votre travail et vos activités.',
+    Stock: 'Contrôlez vos produits, vos entrées et vos sorties.',
+    Planning: 'Organisez vos cours, votre travail et vos activités.',
     'Prospects & Clients': 'Gérez vos contacts, vos clients et vos relances.',
     'SAMA IA': 'Votre assistant intelligent pour apprendre et progresser.',
   }
@@ -140,7 +217,9 @@ function App() {
       <main className="dashboard">
         <header className="topbar">
           <div className="brand">
-            <div className="brand-mark"><SamaLogo size={38} /></div>
+            <div className="brand-mark">
+              <SamaLogo size={38} />
+            </div>
             <div>
               <h2>SAMA FBO</h2>
               <span>ÉTUDES · RIGUEUR · CROISSANCE</span>
@@ -161,7 +240,10 @@ function App() {
             <section className="welcome">
               <span className="eyebrow">VOTRE ESPACE PERSONNEL</span>
               <h1>Construisez votre réussite.</h1>
-              <p>Organisez vos études, développez votre activité Forever et avancez vers vos objectifs.</p>
+              <p>
+                Organisez vos études, développez votre activité Forever et
+                avancez vers vos objectifs.
+              </p>
             </section>
 
             <section className="stats">
@@ -231,7 +313,10 @@ function App() {
             <p>{pageDescriptions[activePage]}</p>
             <div className="module-placeholder">
               <h2>Votre espace est en préparation</h2>
-              <p>Nous allons construire les fonctionnalités de cette rubrique progressivement.</p>
+              <p>
+                Nous allons construire les fonctionnalités de cette rubrique
+                progressivement.
+              </p>
               <button onClick={() => navigateToPage('Accueil')}>
                 Retour à l'accueil
               </button>

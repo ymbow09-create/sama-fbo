@@ -1,5 +1,6 @@
 ﻿
 import { useEffect, useMemo, useState } from 'react'
+import { scheduleCloudSave } from '../lib/cloudSync'
 import './Accounting.css'
 
 type Product = {
@@ -31,6 +32,10 @@ type Expense = {
   date: string
 }
 
+const PRODUCTS_KEY = 'sama-fbo-products'
+const SALES_KEY = 'sama-fbo-sales'
+const EXPENSES_KEY = 'sama-fbo-expenses'
+
 function today() {
   const date = new Date()
   const offset = date.getTimezoneOffset()
@@ -48,7 +53,7 @@ function loadData<T>(key: string): T[] {
 }
 
 function loadProducts(): Product[] {
-  const saved = loadData<Partial<Product>>('sama-fbo-products')
+  const saved = loadData<Partial<Product>>(PRODUCTS_KEY)
 
   return saved.map((product, index) => ({
     id: String(product.id ?? `ancien-produit-${index}`),
@@ -70,8 +75,8 @@ function formatFCFA(value: number) {
 
 function Accounting() {
   const [products, setProducts] = useState<Product[]>(loadProducts)
-  const [sales, setSales] = useState<Sale[]>(() => loadData<Sale>('sama-fbo-sales'))
-  const [expenses, setExpenses] = useState<Expense[]>(() => loadData<Expense>('sama-fbo-expenses'))
+  const [sales, setSales] = useState<Sale[]>(() => loadData<Sale>(SALES_KEY))
+  const [expenses, setExpenses] = useState<Expense[]>(() => loadData<Expense>(EXPENSES_KEY))
 
   const [productName, setProductName] = useState('')
   const [productPrice, setProductPrice] = useState('')
@@ -93,15 +98,18 @@ function Accounting() {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    localStorage.setItem('sama-fbo-products', JSON.stringify(products))
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products))
+    scheduleCloudSave(PRODUCTS_KEY, products)
   }, [products])
 
   useEffect(() => {
-    localStorage.setItem('sama-fbo-sales', JSON.stringify(sales))
+    localStorage.setItem(SALES_KEY, JSON.stringify(sales))
+    scheduleCloudSave(SALES_KEY, sales)
   }, [sales])
 
   useEffect(() => {
-    localStorage.setItem('sama-fbo-expenses', JSON.stringify(expenses))
+    localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses))
+    scheduleCloudSave(EXPENSES_KEY, expenses)
   }, [expenses])
 
   const currentMonth = today().slice(0, 7)
@@ -243,7 +251,7 @@ function Accounting() {
     }
 
     const newSale: Sale = {
-      id: String(Date.now()),
+      id: crypto.randomUUID(),
       productId: product.id,
       productName: product.name,
       quantity,
@@ -280,7 +288,7 @@ function Accounting() {
 
     setExpenses((previous) => [
       {
-        id: String(Date.now()),
+        id: crypto.randomUUID(),
         label: expenseLabel.trim(),
         category: expenseCategory,
         amount,

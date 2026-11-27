@@ -8,6 +8,7 @@ import {
   Plus,
   History,
 } from 'lucide-react'
+import { scheduleCloudSave } from '../lib/cloudSync'
 import './Stock.css'
 
 type Product = {
@@ -39,6 +40,8 @@ function readProducts(): Product[] {
 
     return data.map((product) => ({
       ...product,
+      price: Number(product.price) || 0,
+      cc: Number(product.cc) || 0,
       stock: Number(product.stock) || 0,
       minStock: Number(product.minStock) || 0,
     }))
@@ -70,10 +73,12 @@ function Stock() {
 
   useEffect(() => {
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products))
+    scheduleCloudSave(PRODUCTS_KEY, products)
   }, [products])
 
   useEffect(() => {
     localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(movements))
+    scheduleCloudSave(MOVEMENTS_KEY, movements)
   }, [movements])
 
   const totalUnits = useMemo(
@@ -174,6 +179,7 @@ function Stock() {
         date: new Date().toISOString(),
         note: 'Stock initial',
       }
+
       setMovements((previous) => [initialMovement, ...previous])
     }
 
@@ -234,7 +240,9 @@ function Stock() {
             <label>Type de mouvement</label>
             <select
               value={movementType}
-              onChange={(event) => setMovementType(event.target.value as 'entrée' | 'sortie')}
+              onChange={(event) =>
+                setMovementType(event.target.value as 'entrée' | 'sortie')
+              }
             >
               <option value="entrée">Entrée de stock</option>
               <option value="sortie">Sortie de stock</option>
