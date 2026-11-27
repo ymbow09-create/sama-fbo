@@ -1,6 +1,8 @@
 ﻿
-import SamaLogo from './components/SamaLogo'
 import { useEffect, useState } from 'react'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { auth } from './lib/firebase'
+import SamaLogo from './components/SamaLogo'
 import Login from './components/Login'
 import Navigation, { type PageName } from './components/Navigation'
 import Accounting from './components/Accounting'
@@ -66,6 +68,7 @@ function formatFCFA(value: number) {
 function App() {
   const [showSplash, setShowSplash] = useState(true)
   const [user, setUser] = useState('')
+  const [authReady, setAuthReady] = useState(false)
   const [activePage, setActivePage] = useState<PageName>('Accueil')
   const [stats, setStats] = useState<DashboardStats>(getDashboardStats)
 
@@ -77,6 +80,35 @@ function App() {
     return () => window.clearTimeout(timer)
   }, [])
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(
+          firebaseUser.email ||
+          firebaseUser.displayName ||
+          firebaseUser.uid
+        )
+      } else {
+        setUser('')
+      }
+
+      setAuthReady(true)
+    })
+
+    return unsubscribe
+  }, [])
+
+  async function handleLogout() {
+    try {
+      await signOut(auth)
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion :', error)
+    }
+
+    setUser('')
+    setActivePage('Accueil')
+  }
+
   function navigateToPage(page: PageName) {
     if (page === 'Accueil') {
       setStats(getDashboardStats())
@@ -84,7 +116,7 @@ function App() {
     setActivePage(page)
   }
 
-  if (showSplash) {
+  if (showSplash || !authReady) {
     return <Splash />
   }
 
@@ -114,10 +146,11 @@ function App() {
               <span>ÉTUDES · RIGUEUR · CROISSANCE</span>
             </div>
           </div>
+
           <div className="profile">
             <span>{user}</span>
             <div className="avatar">{user.charAt(0).toUpperCase()}</div>
-            <button className="logout-button" onClick={() => setUser('')}>
+            <button className="logout-button" onClick={handleLogout}>
               Déconnexion
             </button>
           </div>
