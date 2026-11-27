@@ -1,4 +1,5 @@
 ﻿
+import { useState } from 'react'
 import SamaLogo from './SamaLogo'
 import {
   Home,
@@ -7,6 +8,8 @@ import {
   CalendarDays,
   Users,
   BrainCircuit,
+  Menu,
+  X,
 } from 'lucide-react'
 
 export type PageName =
@@ -31,12 +34,28 @@ const menuItems = [
   { name: 'SAMA IA' as PageName, icon: BrainCircuit },
 ]
 
+const mobileMainItems = menuItems.slice(0, 3)
+const mobileMoreItems = menuItems.slice(3)
+
 function Navigation({ activePage, onNavigate }: NavigationProps) {
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const hasMorePageActive = mobileMoreItems.some(
+    (item) => item.name === activePage
+  )
+
+  function handleNavigate(page: PageName) {
+    onNavigate(page)
+    setMenuOpen(false)
+  }
+
   return (
     <>
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <div className="brand-mark"><SamaLogo size={38} /></div>
+          <div className="brand-mark">
+            <SamaLogo size={38} />
+          </div>
           <div>
             <strong>SAMA FBO</strong>
             <span>VOTRE ESPACE</span>
@@ -45,8 +64,10 @@ function Navigation({ activePage, onNavigate }: NavigationProps) {
 
         <nav className="side-menu">
           <span className="menu-label">MENU PRINCIPAL</span>
+
           {menuItems.map((item) => {
             const Icon = item.icon
+
             return (
               <button
                 key={item.name}
@@ -66,28 +87,56 @@ function Navigation({ activePage, onNavigate }: NavigationProps) {
         </div>
       </aside>
 
-      <nav className="mobile-nav">
-        {menuItems.map((item) => {
+      <nav className="mobile-nav" aria-label="Navigation principale">
+        {mobileMainItems.map((item) => {
           const Icon = item.icon
+
           return (
             <button
               key={item.name}
               className={`mobile-nav-item ${activePage === item.name ? 'active' : ''}`}
-              onClick={() => onNavigate(item.name)}
+              onClick={() => handleNavigate(item.name)}
               aria-label={item.name}
-              title={item.name}
+              aria-current={activePage === item.name ? 'page' : undefined}
             >
               <Icon size={21} />
               <span>
-                {item.name === 'Comptabilité & CC' ? 'Compta' :
-                  item.name === 'Prospects & Clients' ? 'Contacts' :
-                  item.name === 'Accueil' ? 'Accueil' :
-                  item.name === 'Planning' ? 'Planning' :
-                  item.name === 'Stock' ? 'Stock' : 'SAMA IA'}
+                {item.name === 'Comptabilité & CC' ? 'Compta' : item.name}
               </span>
             </button>
           )
         })}
+
+        <button
+          className={`mobile-nav-item mobile-menu-toggle ${menuOpen || hasMorePageActive ? 'active' : ''}`}
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+          aria-expanded={menuOpen}
+        >
+          {menuOpen ? <X size={21} /> : <Menu size={21} />}
+          <span>Menu</span>
+        </button>
+
+        {menuOpen && (
+          <div className="mobile-menu-panel">
+            <span className="mobile-menu-title">AUTRES RUBRIQUES</span>
+
+            {mobileMoreItems.map((item) => {
+              const Icon = item.icon
+
+              return (
+                <button
+                  key={item.name}
+                  className={`mobile-menu-item ${activePage === item.name ? 'active' : ''}`}
+                  onClick={() => handleNavigate(item.name)}
+                >
+                  <Icon size={19} />
+                  <span>{item.name === 'Prospects & Clients' ? 'Contacts' : item.name}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </nav>
     </>
   )

@@ -509,3 +509,76 @@ footer {
   }
 }
 
+/* =========================================
+   EN-TETE RESPONSIVE - IPHONE ET ANDROID
+========================================= */
+
+@media (max-width: 560px) {
+  .dashboard {
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+
+  .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 18px;
+  }
+
+  .brand {
+    flex: 1 1 100%;
+    min-width: 0;
+    gap: 12px;
+  }
+
+  .brand-mark {
+    flex: 0 0 46px;
+  }
+
+  .brand > div:last-child {
+    min-width: 0;
+  }
+
+  .brand h2 {
+    font-size: 18px;
+  }
+
+  .brand span {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .profile {
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .profile > span {
+    display: block;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+
+  .avatar {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .logout-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+}
+
