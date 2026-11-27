@@ -1,25 +1,47 @@
-﻿import { useState, type FormEvent } from 'react'
+﻿
+import { useState, type FormEvent } from 'react'
+import {
+  signInWithPopup,
+} from 'firebase/auth'
 import {
   ArrowRight,
   Eye,
   EyeOff,
   LockKeyhole,
   Moon,
-  ScanLine,
   Sun,
   UserRound,
-  UserPlus,
   Leaf,
   X,
 } from 'lucide-react'
 import './Login.css'
 import SamaLogo from './SamaLogo'
+import { auth, googleProvider } from '../lib/firebase'
 
 type LoginProps = {
   onLogin: (identifier: string) => void
 }
 
 type Theme = 'dark' | 'light'
+
+function GoogleIcon() {
+  return (
+    <svg width="23" height="23" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.8-.4-4.1H24v7.8h11a9.4 9.4 0 0 1-4.1 6.2v5.1h6.7c3.9-3.6 6-8.8 6-15Z" />
+      <path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.7-5.1c-1.8 1.2-4 1.9-6.8 1.9-5.2 0-9.7-3.5-11.3-8.2H5.8v5.2A20 20 0 0 0 24 44Z" />
+      <path fill="#FBBC05" d="M12.7 27.7a12 12 0 0 1 0-7.4v-5.2H5.8a20 20 0 0 0 0 17.8l6.9-5.2Z" />
+      <path fill="#EA4335" d="M24 12.1c3 0 5.7 1 7.8 3.1l5.9-5.9C34.1 6 29.5 4 24 4A20 20 0 0 0 5.8 15.1l6.9 5.2c1.6-4.7 6.1-8.2 11.3-8.2Z" />
+    </svg>
+  )
+}
+
+function FacebookIcon() {
+  return (
+    <svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.875 11.85v-8.38H7.078V12h3.047V9.356c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.234 2.686.234v2.953h-1.513c-1.49 0-1.956.925-1.956 1.874V12h3.328l-.532 3.47h-2.796v8.38A12.002 12.002 0 0 0 24 12Z" />
+    </svg>
+  )
+}
 
 function Login({ onLogin }: LoginProps) {
   const [identifier, setIdentifier] = useState(
@@ -35,6 +57,7 @@ function Login({ onLogin }: LoginProps) {
     () => (localStorage.getItem('sama-fbo-login-theme') as Theme) || 'dark',
   )
   const [notice, setNotice] = useState('')
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -65,13 +88,156 @@ function Login({ onLogin }: LoginProps) {
     localStorage.setItem('sama-fbo-login-theme', nextTheme)
   }
 
-  function enterDemo() {
+  async function handleGoogleLogin() {
+    if (googleLoading) return
+
+    setGoogleLoading(true)
     setError('')
-    onLogin('Démo')
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider)
+      const user = result.user
+      const userIdentifier = user.email || user.uid
+
+      setIdentifier(userIdentifier)
+
+      if (rememberMe) {
+        localStorage.setItem('sama-fbo-remembered-user', userIdentifier)
+      }
+
+      onLogin(userIdentifier)
+    } catch (error) {
+      const code = (error as { code?: string }).code
+
+      if (code === 'auth/popup-closed-by-user') {
+        setNotice('La fenêtre de connexion Google a été fermée avant la fin de la connexion.')
+      } else if (code === 'auth/popup-blocked') {
+        setNotice('Ton navigateur a bloqué la fenêtre Google. Autorise les fenêtres pop-up puis réessaie.')
+      } else if (code === 'auth/unauthorized-domain') {
+        setNotice('Ce domaine n’est pas encore autorisé dans Firebase Authentication. Vérifie les domaines autorisés.')
+      } else if (code === 'auth/operation-not-allowed') {
+        setNotice('La connexion Google n’est pas activée dans Firebase Authentication. Vérifie le fournisseur Google.')
+      } else {
+        setNotice('La connexion Google n’a pas abouti. Vérifie ta connexion Internet et réessaie.')
+      }
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
+
+  function handleSocialLogin(provider: 'Facebook') {
+    setNotice(
+      `La connexion avec ${provider} sera activée après la configuration de ce fournisseur dans Firebase.`,
+    )
   }
 
   return (
     <main className="login-page" data-theme={theme}>
+      <style>{`
+        .login-social-buttons {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 13px;
+          margin-top: 18px;
+        }
+
+        .login-social-button {
+          position: relative;
+          isolation: isolate;
+          overflow: hidden;
+          min-height: 59px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 11px;
+          padding: 12px 15px;
+          border: 1px solid rgba(91, 190, 139, 0.28);
+          border-radius: 17px;
+          color: var(--login-text, #f5f7f5);
+          background: linear-gradient(145deg, rgba(24, 48, 36, 0.92), rgba(5, 15, 10, 0.96));
+          box-shadow:
+            0 8px 22px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.09);
+          font-size: 13px;
+          font-weight: 750;
+          cursor: pointer;
+          transition: transform 280ms ease, border-color 280ms ease, box-shadow 280ms ease;
+        }
+
+        .login-social-button::before {
+          content: "";
+          position: absolute;
+          z-index: -1;
+          inset: -60%;
+          background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.13) 50%, transparent 65%);
+          transform: translateX(-70%) rotate(15deg);
+          transition: transform 650ms ease;
+        }
+
+        .login-social-button:hover:not(:disabled) {
+          transform: translateY(-4px);
+          border-color: rgba(52, 211, 153, 0.72);
+          box-shadow:
+            0 12px 28px rgba(0, 0, 0, 0.28),
+            0 0 22px rgba(52, 211, 153, 0.16),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .login-social-button:hover::before {
+          transform: translateX(70%) rotate(15deg);
+        }
+
+        .login-social-button:active:not(:disabled) {
+          transform: translateY(-1px) scale(.98);
+        }
+
+        .login-social-button:disabled {
+          opacity: .65;
+          cursor: wait;
+        }
+
+        .login-social-logo {
+          width: 34px;
+          height: 34px;
+          display: grid;
+          place-items: center;
+          border: 1px solid rgba(255,255,255,.12);
+          border-radius: 11px;
+          background: rgba(255,255,255,.08);
+          box-shadow: 0 0 15px rgba(255,255,255,.045);
+        }
+
+        .login-page[data-theme="light"] .login-social-button {
+          color: #183526;
+          background: linear-gradient(145deg, #ffffff, #eaf3ed);
+          border-color: rgba(39, 125, 84, .22);
+          box-shadow: 0 7px 20px rgba(45, 75, 55, .10), inset 0 1px 0 #fff;
+        }
+
+        .login-page[data-theme="light"] .login-social-button:hover:not(:disabled) {
+          border-color: rgba(22, 134, 83, .55);
+          box-shadow: 0 12px 25px rgba(22, 134, 83, .13), 0 0 18px rgba(22, 134, 83, .10);
+        }
+
+        @media (max-width: 360px) {
+          .login-social-buttons {
+            gap: 8px;
+          }
+          .login-social-button {
+            gap: 7px;
+            padding: 10px 7px;
+            font-size: 12px;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .login-social-button,
+          .login-social-button::before {
+            transition: none !important;
+          }
+        }
+      `}</style>
+
       <div className="login-atmosphere" aria-hidden="true">
         <div className="login-orbit login-orbit-one" />
         <div className="login-orbit login-orbit-two" />
@@ -173,7 +339,7 @@ function Login({ onLogin }: LoginProps) {
               type="button"
               className="login-text-button"
               onClick={() => setNotice(
-                'La connexion actuelle est une démonstration locale. Aucun PIN réel n’est enregistré. Pour accéder à l’application, saisis ton identifiant et un code de 4 à 6 chiffres, ou utilise le Mode Démo.',
+                'La connexion actuelle par identifiant et PIN est une démonstration locale. La récupération du PIN sera configurée séparément.',
               )}
             >
               PIN oublié ?
@@ -190,36 +356,30 @@ function Login({ onLogin }: LoginProps) {
 
         <div className="login-divider">
           <span />
-          <p>OU ACCÈS RAPIDE</p>
+          <p>OU CONTINUER AVEC</p>
           <span />
         </div>
 
-        <div className="login-shortcuts">
-          <button type="button" className="login-shortcut" onClick={enterDemo}>
-            <span className="login-shortcut-icon"><Leaf size={19} /></span>
-            <span>Mode Démo</span>
+        <div className="login-social-buttons">
+          <button
+            type="button"
+            className="login-social-button"
+            onClick={handleGoogleLogin}
+            disabled={googleLoading}
+            aria-label="Continuer avec Google"
+          >
+            <span className="login-social-logo"><GoogleIcon /></span>
+            <span>{googleLoading ? 'Connexion...' : 'Google'}</span>
           </button>
 
           <button
             type="button"
-            className="login-shortcut"
-            onClick={() => setNotice(
-              'La création et la configuration des profils ne sont pas encore disponibles. Cette fonctionnalité sera ajoutée dans une prochaine version de SAMA FBO.',
-            )}
+            className="login-social-button"
+            onClick={() => handleSocialLogin('Facebook')}
+            aria-label="Continuer avec Facebook"
           >
-            <span className="login-shortcut-icon"><UserPlus size={19} /></span>
-            <span>Mon profil</span>
-          </button>
-
-          <button
-            type="button"
-            className="login-shortcut"
-            onClick={() => setNotice(
-              'Le scanner de documents est en préparation. Il ne demande pas encore l’accès à votre appareil photo.',
-            )}
-          >
-            <span className="login-shortcut-icon"><ScanLine size={19} /></span>
-            <span>Scanner</span>
+            <span className="login-social-logo"><FacebookIcon /></span>
+            <span>Facebook</span>
           </button>
         </div>
 
@@ -261,5 +421,3 @@ function Login({ onLogin }: LoginProps) {
 }
 
 export default Login
-
-
