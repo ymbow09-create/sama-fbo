@@ -1,0 +1,153 @@
+﻿:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3f6f4;
+  --surface: #ffffff;
+  --surface-light: #eaf0ec;
+  --gold: #a87916;
+  --green: #07865e;
+  --text: #17251d;
+  --muted: #64756b;
+  --border: rgba(20, 50, 35, 0.14);
+}
+
+:root[data-theme="light"] body {
+  color: var(--text);
+  background: linear-gradient(135deg, #f5f8f6, #e9f0eb);
+}
+
+:root[data-theme="light"] .dashboard {
+  color: var(--text);
+}
+
+:root[data-theme="light"] .topbar,
+:root[data-theme="light"] .stat-card,
+:root[data-theme="light"] .quick-card,
+:root[data-theme="light"] .module-page,
+:root[data-theme="light"] .accounting-panel,
+:root[data-theme="light"] .stock-panel,
+:root[data-theme="light"] .prospects-panel,
+:root[data-theme="light"] .sama-ai-chat,
+:root[data-theme="light"] .planning-panel {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.94);
+  border-color: var(--border);
+  box-shadow: 0 8px 28px rgba(25, 55, 38, 0.06);
+}
+
+:root[data-theme="light"] h1,
+:root[data-theme="light"] h2,
+:root[data-theme="light"] h3,
+:root[data-theme="light"] p,
+:root[data-theme="light"] label,
+:root[data-theme="light"] .brand h2,
+:root[data-theme="light"] .profile,
+:root[data-theme="light"] .stat-card strong,
+:root[data-theme="light"] .quick-card h3 {
+  color: var(--text);
+}
+
+:root[data-theme="light"] .welcome p,
+:root[data-theme="light"] .stat-card span,
+:root[data-theme="light"] .stat-card small,
+:root[data-theme="light"] .quick-card p,
+:root[data-theme="light"] .eyebrow,
+:root[data-theme="light"] footer {
+  color: var(--muted);
+}
+
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea {
+  color: #17251d;
+  background: #ffffff;
+  border-color: #d4dfd8;
+}
+
+:root[data-theme="light"] input::placeholder,
+:root[data-theme="light"] textarea::placeholder {
+  color: #87958c;
+}
+
+:root[data-theme="light"] table th {
+  color: #52645a;
+  background: #edf3ef;
+}
+
+:root[data-theme="light"] table td {
+  color: #26382e;
+  border-color: #e0e8e3;
+}
+
+:root[data-theme="light"] .sidebar,
+:root[data-theme="light"] .mobile-nav,
+:root[data-theme="light"] .mobile-menu-panel {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.97);
+  border-color: var(--border);
+}
+
+:root[data-theme="light"] .nav-item,
+:root[data-theme="light"] .mobile-nav-item,
+:root[data-theme="light"] .mobile-menu-item {
+  color: #52645a;
+}
+
+:root[data-theme="light"] .nav-item.active,
+:root[data-theme="light"] .mobile-nav-item.active,
+:root[data-theme="light"] .mobile-menu-item.active {
+  color: #087b56;
+  background: #e5f3eb;
+}
+
+:root[data-theme="light"] .accounting-stat,
+:root[data-theme="light"] .stock-stat-card,
+:root[data-theme="light"] .prospect-stat,
+:root[data-theme="light"] .sale-preview,
+:root[data-theme="light"] .prospect-details-grid div,
+:root[data-theme="light"] .movement-details {
+  color: var(--text);
+  background: #f0f5f2;
+  border-color: var(--border);
+}
+
+:root[data-theme="light"] .sama-ai-message,
+:root[data-theme="light"] .sama-ai-input-area {
+  color: var(--text);
+  background: #f0f5f2;
+}
+
+:root[data-theme="light"] .theme-toggle {
+  color: #79550e;
+  background: #fff7df;
+  border-color: #e7d5a6;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid rgba(212, 173, 91, 0.35);
+  border-radius: 12px;
+  color: #e5bd69;
+  background: rgba(212, 173, 91, 0.1);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 600px) {
+  .theme-toggle {
+    min-height: 36px;
+    padding: 7px 9px;
+    font-size: 0.75rem;
+  }
+}

@@ -1,5 +1,6 @@
 ﻿
 import { useEffect, useState } from 'react'
+import { Sun, Moon } from 'lucide-react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from './lib/firebase'
 import { syncUserData } from './lib/sync'
@@ -14,6 +15,7 @@ import SamaAI from './components/SamaAI'
 import Splash from './components/Splash'
 import './App.css'
 import './components/Navigation.css'
+import './theme.css'
 
 type DashboardStats = {
   revenue: number
@@ -80,6 +82,14 @@ function App() {
   const [syncAttempt, setSyncAttempt] = useState(0)
   const [activePage, setActivePage] = useState<PageName>('Accueil')
   const [stats, setStats] = useState<DashboardStats>(getDashboardStats)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return localStorage.getItem('sama-fbo-theme') === 'light' ? 'light' : 'dark'
+  })
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('sama-fbo-theme', theme)
+  }, [theme])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -229,6 +239,15 @@ function App() {
           <div className="profile">
             <span>{user}</span>
             <div className="avatar">{user.charAt(0).toUpperCase()}</div>
+            <button
+              className="theme-toggle"
+              onClick={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
+              aria-label={theme === 'dark' ? 'Activer le mode clair' : 'Activer le mode sombre'}
+              title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+            >
+              {theme === 'dark' ? <Sun size={19} /> : <Moon size={19} />}
+              <span>{theme === 'dark' ? 'Mode clair' : 'Mode sombre'}</span>
+            </button>
             <button className="logout-button" onClick={handleLogout}>
               Déconnexion
             </button>
@@ -331,3 +350,5 @@ function App() {
 }
 
 export default App
+
+
